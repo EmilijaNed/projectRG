@@ -27,8 +27,8 @@ void processInput(GLFWwindow *window);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1920;
+const unsigned int SCR_HEIGHT = 1080;
 
 // camera
 
@@ -52,6 +52,11 @@ struct PointLight {
 };
 
 struct ProgramState {
+    //pomocne promenljivei vektori koje ce mi sluziti za obradu objekata
+    glm::vec3 vecTranslate = glm::vec3(0);
+    glm::vec3 vecRotate = glm::vec3(0);
+    float scale = 0.5f;
+
     glm::vec3 clearColor = glm::vec3(0);
     bool ImGuiEnabled = false;
     Camera camera;
@@ -137,7 +142,7 @@ int main() {
     }
 
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
-    stbi_set_flip_vertically_on_load(true);
+//    stbi_set_flip_vertically_on_load(true);
 
     programState = new ProgramState;
     programState->LoadFromFile("resources/program_state.txt");
@@ -158,15 +163,22 @@ int main() {
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
+    //cull face
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
 
     // build and compile shaders
-    // -------------------------
+    // -----------------------------------------------------------------------------------------------------------------------------
     Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
 
     // load models
-    // -----------
-    Model ourModel("resources/objects/backpack/backpack.obj");
-    ourModel.SetShaderTextureNamePrefix("material.");
+    // --------------------------------------------------------------------------------------------------------------------------------
+    //hram
+    Model hramModel("resources/objects/hram/TEMPLES.obj");
+    hramModel.SetShaderTextureNamePrefix("material.");
+    //LCDP
+    Model sgModel("resources/objects/squid_game/SG_scene.obj");
+    sgModel.SetShaderTextureNamePrefix("material.");
 
     PointLight& pointLight = programState->pointLight;
     pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
@@ -222,12 +234,33 @@ int main() {
         ourShader.setMat4("view", view);
 
         // render the loaded model
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model,
-                               programState->backpackPosition); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
-        ourShader.setMat4("model", model);
-        ourModel.Draw(ourShader);
+        //____________________________________________________________________________________________
+        //render obj
+//        glm::mat4 modelM = glm::mat4(1.0f);
+//        modelM = glm::translate(modelM,programState->vecTranslate);
+//        modelM = glm::scale(modelM, glm::vec3(programState->scale));
+//        modelM = glm::rotate(modelM,glm::radians(programState->vecRotate.x), glm::vec3(1.0f ,0.0f, 0.0f));
+//        modelM = glm::rotate(modelM,glm::radians(programState->vecRotate.y), glm::vec3(0.0f ,1.0f, 0.0f));
+//        modelM = glm::rotate(modelM,glm::radians(programState->vecRotate.z), glm::vec3(0.0f ,0.0f, 1.0f));
+//        ourShader.setMat4("model", modelM);
+//        objModel.Draw(ourShader);
+        //---------------------------------------------------------------------------------
+        //render hram
+        glm::mat4 modelHram = glm::mat4(1.0f);
+        modelHram = glm::translate(modelHram,glm::vec3(3.0f,23.0f,0.0f));
+        modelHram = glm::scale(modelHram, glm::vec3(1.8f));
+        modelHram = glm::rotate(modelHram,glm::radians(-90.0f), glm::vec3(1.0f ,0.0f, 0.0f));
+        ourShader.setMat4("model", modelHram);
+        hramModel.Draw(ourShader);
+        //render squid game
+        glm::mat4 modelSG = glm::mat4(1.0f);
+        modelSG = glm::translate(modelSG,glm::vec3(-0.27f,-2.4f,-1.64f));
+        modelSG = glm::scale(modelSG, glm::vec3(0.0003f));
+        modelSG = glm::rotate(modelSG,glm::radians(-90.0f), glm::vec3(1.0f ,0.0f, 0.0f));
+        ourShader.setMat4("model", modelSG);
+        sgModel.Draw(ourShader);
+
+
 
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
@@ -308,13 +341,12 @@ void DrawImGui(ProgramState *programState) {
 
     {
         static float f = 0.0f;
-        ImGui::Begin("Hello window");
-        ImGui::Text("Hello text");
-        ImGui::SliderFloat("Float slider", &f, 0.0, 1.0);
-        ImGui::ColorEdit3("Background color", (float *) &programState->clearColor);
-        ImGui::DragFloat3("Backpack position", (float*)&programState->backpackPosition);
-        ImGui::DragFloat("Backpack scale", &programState->backpackScale, 0.05, 0.1, 4.0);
+        ImGui::Begin("Settings");
+        ImGui::DragFloat3("object translate", (float*)&programState->vecTranslate, 0.01);
+        ImGui::DragFloat3("object rotate", (float*)&programState->vecRotate, 0.01);
+        ImGui::DragFloat("object scale", &programState->scale, 0.01, 0.0001, 20.0);
 
+        ImGui::Text("Lights settings");
         ImGui::DragFloat("pointLight.constant", &programState->pointLight.constant, 0.05, 0.0, 1.0);
         ImGui::DragFloat("pointLight.linear", &programState->pointLight.linear, 0.05, 0.0, 1.0);
         ImGui::DragFloat("pointLight.quadratic", &programState->pointLight.quadratic, 0.05, 0.0, 1.0);
@@ -343,6 +375,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         } else {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            programState->CameraMouseMovementUpdateEnabled = true;
+
         }
     }
 }
+
