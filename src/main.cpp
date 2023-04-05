@@ -31,6 +31,8 @@ unsigned int loadCubemap(vector<std::string> faces);
 // settings
 const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
+bool spotlightOn = true;
+
 
 // camera
 
@@ -285,22 +287,49 @@ int main() {
 
         // don't forget to enable shader before setting uniforms
         ourShader.use();
-        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
-        ourShader.setVec3("pointLight.position", pointLight.position);
-        ourShader.setVec3("pointLight.ambient", pointLight.ambient);
-        ourShader.setVec3("pointLight.diffuse", pointLight.diffuse);
-        ourShader.setVec3("pointLight.specular", pointLight.specular);
-        ourShader.setFloat("pointLight.constant", pointLight.constant);
-        ourShader.setFloat("pointLight.linear", pointLight.linear);
-        ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
-        ourShader.setVec3("viewPosition", programState->camera.Position);
-        ourShader.setFloat("material.shininess", 32.0f);
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = programState->camera.GetViewMatrix();
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
+        ourShader.setFloat("material.shininess", 32.0f);
+
+        //-------------------------------------pointlight 1-------------------------------------------------------------
+        ourShader.setVec3("pointLights[0].position", glm::vec3(-2.8f ,-2.7f+sin(currentFrame)*0.5f, 1.0f));
+        ourShader.setVec3("pointLights[0].ambient", pointLight.ambient);
+        ourShader.setVec3("pointLights[0].diffuse", pointLight.diffuse);
+        ourShader.setVec3("pointLights[0].specular", pointLight.specular);
+        ourShader.setFloat("pointLights[0].constant", pointLight.constant);
+        ourShader.setFloat("pointLights[0].linear", pointLight.linear);
+        ourShader.setFloat("pointLights[0].quadratic", pointLight.quadratic);
+        //-------------------------------------pointlight 2-------------------------------------------------------------
+        ourShader.setVec3("pointLights[1].position", glm::vec3(1.64f ,-2.2f, (sin(currentFrame)-1)*1.7f));
+        ourShader.setVec3("pointLights[1].ambient", pointLight.ambient);
+        ourShader.setVec3("pointLights[1].diffuse", pointLight.diffuse);
+        ourShader.setVec3("pointLights[1].specular", pointLight.specular);
+        ourShader.setFloat("pointLights[1].constant", pointLight.constant);
+        ourShader.setFloat("pointLights[1].linear", pointLight.linear);
+        ourShader.setFloat("pointLights[1].quadratic", pointLight.quadratic);
+
+
+
+        //--------------------------------------------spotlight--------------------------------------------------------
+        if (spotlightOn) {
+            ourShader.setVec3("spotLight.position", programState->camera.Position);
+            ourShader.setVec3("spotLight.direction", programState->camera.Front);
+            ourShader.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
+            ourShader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
+            ourShader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
+            ourShader.setFloat("spotLight.constant", 1.0f);
+            ourShader.setFloat("spotLight.linear", 0.09);
+            ourShader.setFloat("spotLight.quadratic", 0.032);
+            ourShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
+            ourShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
+        }else{
+            ourShader.setVec3("spotLight.diffuse", 0.0f, 0.0f, 0.0f);
+            ourShader.setVec3("spotLight.specular", 0.0f, 0.0f, 0.0f);
+        }
 
         // render the loaded model
         //____________________________________________________________________________________________
@@ -326,6 +355,7 @@ int main() {
         modelSG = glm::translate(modelSG,glm::vec3(-0.27f,-2.4f,-1.64f));
         modelSG = glm::scale(modelSG, glm::vec3(0.0003f));
         modelSG = glm::rotate(modelSG,glm::radians(-90.0f), glm::vec3(1.0f ,0.0f, 0.0f));
+        modelSG = glm::rotate(modelSG,glm::radians(currentFrame*30.0f), glm::vec3(0.0f ,0.0f, 1.0f));
         ourShader.setMat4("model", modelSG);
         sgModel.Draw(ourShader);
 
@@ -462,6 +492,13 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             programState->CameraMouseMovementUpdateEnabled = true;
 
+        }
+    }
+    if (key == GLFW_KEY_L && action == GLFW_PRESS){
+        if(spotlightOn){
+            spotlightOn = false;
+        }else{
+            spotlightOn = true;
         }
     }
 }
