@@ -62,10 +62,6 @@ struct PointLight {
 };
 
 struct ProgramState {
-    //pomocne promenljivei vektori koje ce mi sluziti za obradu objekata
-    glm::vec3 vecTranslate = glm::vec3(0);
-    glm::vec3 vecRotate = glm::vec3(0);
-    float scale = 0.5f;
 
     glm::vec3 clearColor = glm::vec3(0);
     bool ImGuiEnabled = false;
@@ -151,9 +147,6 @@ int main() {
         return -1;
     }
 
-    // obrce teksture
-//    stbi_set_flip_vertically_on_load(true);
-
     programState = new ProgramState;
     programState->LoadFromFile("resources/program_state.txt");
     if (programState->ImGuiEnabled) {
@@ -167,7 +160,6 @@ int main() {
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330 core");
-
 
     glEnable(GL_DEPTH_TEST);
     //cull face <-------------------------------------------------------------------------------------------------------
@@ -186,7 +178,6 @@ int main() {
     Shader shaderBloomFinal("resources/shaders/bloom_final.vs", "resources/shaders/bloom_final.fs");
     //blending(transparent) shader
     Shader transpShader("resources/shaders/main.vs", "resources/shaders/blending.fs");
-
     // ======================================load models================================================================
     //hram
     Model hramModel("resources/objects/hram/TEMPLES.obj");
@@ -197,7 +188,9 @@ int main() {
     //lobanja
     Model lobanjaModel("resources/objects/skull/12140_Skull_v3_L2.obj");
     lobanjaModel.SetShaderTextureNamePrefix("material.");
-
+    //skeleton
+    Model skeletonModel("resources/objects/skeleton/skeleton.obj");
+    skeletonModel.SetShaderTextureNamePrefix("material.");
     //===========================================================Bloom efekat===========================================
     // configure framebuffers
     unsigned int hdrFBO;
@@ -254,8 +247,6 @@ int main() {
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             std::cout << "Framebuffer not complete!" << std::endl;
     }
-
-
     //====================================seting skybox vertices========================================================
     float skyboxVertices[] = {
             // positions
@@ -325,7 +316,6 @@ int main() {
 
     cubemapsShader.use();
     cubemapsShader.setInt("skybox", 0);
-
     //========================================Podesavanje svetala=======================================================
     PointLight& pointLight = programState->pointLight;
     pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
@@ -333,13 +323,11 @@ int main() {
     pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
     pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
 
-    pointLight.constant = 0.6f;
-    pointLight.linear = 0.1f;
+    pointLight.constant = 0.4f;
+    pointLight.linear = 0.5f;
     pointLight.quadratic = 0.2f;
 
-
-    // shader configuration
-    // _______________________________________________________________________________________________
+    // shaders configuration <-------------------------------------------------------------------------------------------
     ourShader.use();
     ourShader.setInt("diffuseTexture", 0);
     shaderBlur.use();
@@ -360,7 +348,6 @@ int main() {
         // input
         // -----
         processInput(window);
-
 
         // render
         // ------
@@ -413,18 +400,7 @@ int main() {
             ourShader.setVec3("spotLight.specular", 0.0f, 0.0f, 0.0f);
         }
 
-        // render the loaded model
-        //____________________________________________________________________________________________
-        //render obj
-//        glm::mat4 modelM = glm::mat4(1.0f);
-//        modelM = glm::translate(modelM,programState->vecTranslate);
-//        modelM = glm::scale(modelM, glm::vec3(programState->scale));
-//        modelM = glm::rotate(modelM,glm::radians(programState->vecRotate.x), glm::vec3(1.0f ,0.0f, 0.0f));
-//        modelM = glm::rotate(modelM,glm::radians(programState->vecRotate.y), glm::vec3(0.0f ,1.0f, 0.0f));
-//        modelM = glm::rotate(modelM,glm::radians(programState->vecRotate.z), glm::vec3(0.0f ,0.0f, 1.0f));
-//        ourShader.setMat4("model", modelM);
-//        objModel.Draw(ourShader);
-        //---------------------------------------------------------------------------------
+        //=========================render the loaded models=============================================================
         //render hram
         glm::mat4 modelHram = glm::mat4(1.0f);
         modelHram = glm::translate(modelHram,glm::vec3(3.0f,23.0f,0.0f));
@@ -440,7 +416,6 @@ int main() {
         modelSG = glm::rotate(modelSG,glm::radians(currentFrame*30.0f), glm::vec3(0.0f ,0.0f, 1.0f));
         ourShader.setMat4("model", modelSG);
         sgModel.Draw(ourShader);
-
         //===========================================transparent shader config==========================================
         transpShader.use();
         transpShader.setVec3("viewPosition", programState->camera.Position);
@@ -486,8 +461,15 @@ int main() {
         modelLobanja = glm::rotate(modelLobanja,glm::radians(-90.0f), glm::vec3(1.0f ,0.0f, 0.0f));
         transpShader.setMat4("model", modelLobanja);
         lobanjaModel.Draw(transpShader);
-
-
+        //render skeleton
+        glm::mat4 modelSkeleton = glm::mat4(1.0f);
+        modelSkeleton = glm::translate(modelSkeleton,glm::vec3(1.4f,-2.0f,(sin(currentFrame)-1)*1.7f));
+        modelSkeleton = glm::scale(modelSkeleton, glm::vec3(0.0007f));
+        modelSkeleton = glm::rotate(modelSkeleton,glm::radians(-90.0f), glm::vec3(1.0f ,0.0f, 0.0f));
+        modelSkeleton = glm::rotate(modelSkeleton,glm::radians(-20.0f), glm::vec3(0.0f ,1.0f, 0.0f));
+        modelSkeleton = glm::rotate(modelSkeleton,glm::radians(-90.0f), glm::vec3(0.0f ,0.0f, 1.0f));
+        transpShader.setMat4("model", modelSkeleton);
+        skeletonModel.Draw(transpShader);
         //=====================================render sky===============================================================
         glDepthFunc(GL_LEQUAL);
         cubemapsShader.use();
@@ -505,8 +487,7 @@ int main() {
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
 
-
-// blur bright fragments with two-pass Gaussian Blur
+        // blur bright fragments with two-pass Gaussian Blur
         // _____________________________________________________________________________________
         bool horizontal = true, first_iteration = true;
         unsigned int amount = 5;
@@ -642,9 +623,6 @@ void DrawImGui(ProgramState *programState) {
     {
         static float f = 0.0f;
         ImGui::Begin("Settings");
-        ImGui::DragFloat3("object translate", (float*)&programState->vecTranslate, 0.01);
-        ImGui::DragFloat3("object rotate", (float*)&programState->vecRotate, 0.01);
-        ImGui::DragFloat("object scale", &programState->scale, 0.001, 0.0001, 20.0);
 
         ImGui::Text("Lights settings");
         ImGui::DragFloat("pointLight.constant", &programState->pointLight.constant, 0.01, 0.0, 1.0);
@@ -652,7 +630,6 @@ void DrawImGui(ProgramState *programState) {
         ImGui::DragFloat("pointLight.quadratic", &programState->pointLight.quadratic, 0.01, 0.0, 1.0);
         ImGui::End();
     }
-
     {
         ImGui::Begin("Camera info");
         const Camera& c = programState->camera;
