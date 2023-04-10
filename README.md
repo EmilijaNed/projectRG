@@ -15,7 +15,8 @@ Projekat iz Racunarske grafike koji je radjen u C++ i OpenGl-u
 11. `L` pali i gasi rucnu lampu
 12. `Q` smanjuje exposure
 13. `E` povecava exposure
-14. Link ka folderu na drajvu gde su smesteni objekti(zauzimaju dosta prostora pa ih nije moguce push-ovati na github) https://drive.google.com/drive/folders/1IyqRUqA2-qu9rZQvfCM6jwP9TQQk8L-b?usp=sharing
+14. Link ka folderu na drajvu gde su smesteni objekti(zauzimaju dosta prostora pa ih nije moguce push-ovati na github, preporucujem koriscenje zip datoteke) https://drive.google.com/drive/folders/1IyqRUqA2-qu9rZQvfCM6jwP9TQQk8L-b?usp=sharing 
+15. Link ka snimku na yt https://youtu.be/WBqPO46N-GI
 
 
 # Implementirane oblasti
